@@ -76,9 +76,9 @@ const displayMovements = function (movements) {
   });
 };
 
-const displayCalcBalance = function (movements) {
-  const balance = movements.reduce((sValue, mov) => sValue + mov, 0);
-  labelBalance.textContent = `${balance}€`;
+const displayCalcBalance = function (account) {
+  account.balance = account.movements.reduce((sValue, mov) => sValue + mov, 0);
+  labelBalance.textContent = `${account.balance}€`;
 };
 
 const displayCalcSummary = function (account) {
@@ -109,6 +109,12 @@ const createUserName = function (accs) {
 };
 createUserName(accounts);
 
+const updateUI = function (account) {
+  displayMovements(account.movements);
+  displayCalcBalance(account);
+  displayCalcSummary(account);
+};
+
 let currentAccount;
 btnLogin.addEventListener("click", function (e) {
   e.preventDefault();
@@ -126,8 +132,60 @@ btnLogin.addEventListener("click", function (e) {
     containerApp.style.opacity = "100";
     inputLoginUsername.value = inputLoginPin.value = "";
     inputLoginPin.blur();
-    displayMovements(currentAccount.movements);
-    displayCalcBalance(currentAccount.movements);
-    displayCalcSummary(currentAccount);
+    updateUI(currentAccount);
   }
+});
+
+btnTransfer.addEventListener("click", function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const receivingAccount = accounts.find(
+    (account) => account.userName === inputTransferTo.value
+  );
+  console.log(amount, receivingAccount);
+  //conditions to allow the transfer
+  //receiving account should be valid
+  //the amount should be positive means more than zero
+  //the sending current account should have balance to transfer that money
+  //the username should not be the current account account username
+  if (
+    amount > 0 &&
+    receivingAccount &&
+    amount <= currentAccount.balance &&
+    currentAccount.userName !== inputTransferTo.value
+  ) {
+    currentAccount.movements.push(-amount);
+    receivingAccount.movements.push(amount);
+    inputTransferAmount.value = inputTransferTo.value = "";
+    updateUI(currentAccount);
+  }
+});
+
+btnLoan.addEventListener("click", function (e) {
+  e.preventDefault();
+  let amount = Number(inputLoanAmount.value);
+  if (
+    amount > 0 &&
+    currentAccount.movements.some((deposit) => deposit >= amount * 0.1)
+  ) {
+    currentAccount.movements.push(amount);
+    updateUI(currentAccount);
+  }
+
+  inputLoanAmount.value = "";
+});
+
+btnClose.addEventListener("click", function (e) {
+  e.preventDefault();
+  if (
+    inputCloseUsername.value === currentAccount.userName &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      (account) => account.userName === currentAccount.userName
+    );
+    accounts.splice(index, 1);
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = "";
 });
